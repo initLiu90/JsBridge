@@ -1,0 +1,42 @@
+<html>
+
+<head>
+    <title>test</title>
+</head>
+
+<body>
+    <button id="method_1">jsBridge</button>
+
+</body>
+<script type='text/javascript'>
+    document.getElementById('method_1').onclick = function () {
+
+    };
+
+    function connectJsBridge(callback) {
+        if (window.JsBridge) {
+            callback(JsBridge);
+        } else {
+            document.addEventListener('JsBridgeReady',
+                function () {
+                    callback(JsBridge)
+                },
+                false
+            );
+        }
+    }
+
+    //向jsbridge注册一个消息处理hanlder，用来native发来的消息
+    connectJsBridge(function (jsBridge) {
+        jsBridge.init(function (msg, callback) {
+            console.log('receive native msg:' + msg);
+            if (callback) {
+                var data = { 'Javascript Responds': '测试中文!' };
+                console.log('js response with:' + data);
+                callback(data)
+            }
+        });
+    });
+</script>
+
+</html>
