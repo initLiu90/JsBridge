@@ -5,13 +5,13 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.WebView;
 
-import org.json.JSONObject;
+import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
 public class JsBridgeHandlerImpl implements JsBridgeHandler {
     private WebView mWebView;
     private long mSeq = 0;
     private ArrayMap<String, JsBridgeCallback> mCallbackMap = new ArrayMap<>();
-    private JsBridgeMsgHandler mJsBMsgHandler;
+    private JsBridgeCallbackHandler mJsbCbHandler;
 
     public JsBridgeHandlerImpl(WebView webView) {
         this.mWebView = webView;
@@ -23,93 +23,105 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
      * @param handler
      */
     @Override
-    public void registeMsgHandler(JsBridgeMsgHandler handler) {
-        mJsBMsgHandler = handler;
+    public void registeMsgHandler(JsBridgeCallbackHandler handler) {
+        mJsbCbHandler = handler;
     }
 
     /**
-     * 向H5发消息
+     * native request js
      *
      * @param msg
      */
     @Override
-    public void sendMessage(String msg) {
-        sendMessage(msg, null);
+    public void request(String msg) {
+        request(msg, null);
     }
 
     /**
-     * 向H5发消息，带回调
+     * native request js
      *
      * @param msg
      * @param callback
      */
     @Override
-    public void sendMessage(String msg, JsBridgeCallback callback) {
-        //javascript:JsBridge._handleNativeCall('{data:xxxxxx}')
+    public void request(String msg, JsBridgeCallback callback) {
         JsBridgeMsg jsMsg = new JsBridgeMsg();
         if (!TextUtils.isEmpty(msg)) {
             jsMsg.setData(msg);
         }
-        _sendMessage(jsMsg, callback);
+        realRequest(jsMsg, callback);
     }
 
-    private void _sendMessage(JsBridgeMsg jsMsg, JsBridgeCallback callback) {
+    /**
+     * real native request js
+     * @param jsbMsg
+     * @param callback
+     */
+    private void realRequest(JsBridgeMsg jsbMsg, JsBridgeCallback callback) {
         if (callback != null) {
             String id = generateCallbackId();
-            jsMsg.setCallbackId(id);
+            jsbMsg.setCallbackId(id);
             mCallbackMap.put(id, callback);
         }
-
-        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_CALL_JS + "('" + jsMsg.toString() + "')";
+        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_REQUEST_JS + "('" + jsbMsg.toString() + "')";
         mWebView.loadUrl(jsCmd);
     }
 
+    /**
+     * handle js request native
+     * @param msg
+     */
     @Override
-    public void receiveMessage(String msg) {
-        Log.e("Test", "receiveMessage=" + msg);
-        String responseId = null;
-        String callbackId = null;
-        String data = null;
-        boolean isResponse = false;//native调用js后，js的callback
-        try {
-            JSONObject jsonObject = new JSONObject(msg);
-            if (jsonObject.has("responseId")) {
-                responseId = jsonObject.getString("responseId");
-                isResponse = true;
-            }
-            if (jsonObject.has("callbackId")) {
-                callbackId = jsonObject.getString("callbackId");
-            }
-            data = jsonObject.getString("data");
-        } catch (Exception e) {
-            Log.e("Test", "decode receivemsg error", e);
+    public void handleJsRequest(String msg) {
+        Log.e("Test", "native:handleJsRequest--->" + msg);
+        final JsBridgeMsg jsbMsg = JsBridgeUtil.decodeJsBridgeMsg(msg);
+        if (mJsbCbHandler != null) {
+            mJsbCbHandler.handleCallback(jsbMsg.getData(), TextUtils.isEmpty(jsbMsg.getCallbackId()) ? null : new JsBridgeCallback() {
+                @Override
+                public void onCallback(String responseData) {
+                    response(jsbMsg, responseData);
+                }
+            });
         }
+    }
 
-        if (isResponse) {
-            //根据responseId，查找callback
-            //responseId等于navtive调用js时的callbackId
-            JsBridgeCallback callback = mCallbackMap.get(responseId);
-            if (callback != null) {
-                callback.onCallback(data);
-            }
-        } else {//js 直接调用native
-            Log.e("Test", "receive js call:" + data);
-            if (mJsBMsgHandler != null) {
-                final String tmpResponseId = callbackId;
-                mJsBMsgHandler.onReceive(data, TextUtils.isEmpty(callbackId) ? null : new JsBridgeCallback() {
-                    @Override
-                    public void onCallback(String msg) {
-                        JsBridgeMsg jsMsg = new JsBridgeMsg();
-                        jsMsg.setData(msg);
-                        jsMsg.setResponseId(tmpResponseId);
-                        _sendMessage(jsMsg, null);
-                    }
-                });
-            }
+    /**
+     * native response to js
+     *
+     * @param reqMsg       js发来的请求
+     * @param responseData response的内容
+     */
+    private void response(JsBridgeMsg reqMsg, String responseData) {
+        JsBridgeMsg rspMsg = new JsBridgeMsg();
+        rspMsg.setData(responseData);
+        rspMsg.setResponseId(reqMsg.getCallbackId());
+
+        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_RESPONSE_JS + "('" + rspMsg.toString() + "')";
+        mWebView.loadUrl(jsCmd);
+    }
+
+    /**
+     * handle js response to native
+     * @param msg
+     */
+    @Override
+    public void handleJsResponse(String msg) {
+        Log.e("Test", "native:handleJsResponse--->" + msg);
+        JsBridgeMsg jsbMsg = JsBridgeUtil.decodeJsBridgeMsg(msg);
+        //根据responseId，查找callback
+        //responseId等于navtive调用js时的callbackId
+        JsBridgeCallback callback = mCallbackMap.get(jsbMsg.getResponseId());
+        if (callback != null) {
+            callback.onCallback(jsbMsg.getData());
         }
     }
 
     private String generateCallbackId() {
         return "cb_" + (++mSeq) + "_" + System.currentTimeMillis();
+    }
+
+    @Override
+    public void clear() {
+        mCallbackMap.clear();
     }
 }

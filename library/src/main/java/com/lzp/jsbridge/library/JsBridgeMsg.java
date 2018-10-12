@@ -5,7 +5,7 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
-class JsBridgeMsg {
+public class JsBridgeMsg {
     private String data;
     private String callbackId;
     private String responseId;

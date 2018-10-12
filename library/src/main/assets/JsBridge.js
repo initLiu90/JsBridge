@@ -27,73 +27,77 @@
   }
 
   /**
-   * 分发消息
-   * @param msgJson json字符串
+   * js response to native
+   * @param {*} rspMsg 
    */
-  function dispatchMessage(msgJson) {
-    var message = JSON.parse(msgJson);
-    var responseCallback;
-    /* native调用js，native需要callback */
-    if (message.callbackId) {
-      /*获取native传来的callbackid*/
-      var callbackId = message.callbackId;
-
-      responseCallback = function(responseData) {
-        console.log("real response:" + responseData);
-        _send({
-          responseId: callbackId,
-          data: responseData
-        });
-      };
-      JsBridge.messageHandler(message.data, responseCallback);
-    } else {
-      /* js调用native后，native的response */
-      if (message.responseId) {
-        callbackQueue[message.responseId](message.data);
-      }
-    }
-  }
-
-  /**
-   * 真正向native发消息的接口
-   * @param {*} msg object类型{data:xxx,responseId:xxx}
-   * @param {*} callback 回调
-   */
-  function _send(msg, callback) {
-    if (callback) {
-      msg.callbackId = "cb_" + ++seq + "_" + new Date().getTime();
-      /* 加入到callback队列中 */
-      callbackQueue[msg.callbackId] = callback;
-    }
-    var msgJson = JSON.stringify(msg);
-    console.log("send msg to native:" + msgJson);
+  function response(rspMsg) {
+    var rspMsgJson = JSON.stringify(rspMsg);
+    console.log("js:response--->" + rspMsgJson.toString());
     messageIframe.src =
-      SCHEMA + "://handleJsCall/" + encodeURIComponent(msgJson);
+      SCHEMA + "://JsResponse/" + encodeURIComponent(rspMsgJson);
   }
 
   /**
-   * 提供给H5调用的接口，向nativie发送消息
+   * js request native
    * @param msg
    */
-  function send(msg, callback) {
-    _send({ data: msg }, callback);
+  function request(msg, callback) {
+    var reqMsg = { data: msg };
+    if (callback) {
+      reqMsg.callbackId = "cb_" + ++seq + "_" + new Date().getTime();
+      /* 加入到callback队列中 */
+      callbackQueue[reqMsg.callbackId] = callback;
+    }
+    var reqMsgJson = JSON.stringify(reqMsg);
+    console.log("js:request---->" + reqMsgJson.toString());
+    messageIframe.src =
+      SCHEMA + "://JsRequest/" + encodeURIComponent(reqMsgJson);
   }
 
   /**
-   * 由native调用
+   * handle native request js
    * @param msgJson json字符串
    */
-  function handleNativeCall(msgJson) {
-    console.log("handleNativeCall:" + msgJson);
+  function handleNativeRequest(msgJson) {
+    console.log("js:handleNativeRequest-->" + msgJson);
     if (msgJson) {
-      dispatchMessage(msgJson);
+      var reqMsg = JSON.parse(msgJson);
+      var responseCallback;
+
+      /* native 需要js response */
+      if (reqMsg.callbackId) {
+        /*获取native传来的callbackid*/
+        var callbackId = reqMsg.callbackId;
+        responseCallback = function(responseData) {
+          response({
+            responseId: callbackId,
+            data: responseData
+          });
+        };
+      }
+      JsBridge.messageHandler(reqMsg.data, responseCallback);
+    }
+  }
+
+  /**
+   * handle native response to js
+   * @param msgJson json字符串
+   */
+  function handleNativeResponse(msgJson) {
+    console.log("handleNativeResponse:" + msgJson);
+    if (msgJson) {
+      var rspMsg = JSON.parse(msgJson);
+      if (rspMsg.responseId) {
+        callbackQueue[rspMsg.responseId](rspMsg.data);
+      }
     }
   }
 
   var JsBridge = (window.JsBridge = {
     init: init,
-    handleNativeCall: handleNativeCall,
-    send: send
+    handleNativeRequest: handleNativeRequest,
+    handleNativeResponse: handleNativeResponse,
+    request: request
   });
   createIframe();
 

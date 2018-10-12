@@ -8,33 +8,17 @@ import android.webkit.WebViewClient;
 
 import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
-public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeHandler {
+public class JsBridgeWebViewClient extends WebViewClient {
     private static final String JS_Loaded_FILE = "JsBridge.js";
-    private JsBridgeHandlerImpl mjsBHandler;
-    private JsBridgeMsgHandler mJsBMsgHandler;
+    private JsBridgeHandler mjsBHandler;
+
+    public JsBridgeWebViewClient(WebView webView) {
+        mjsBHandler = new JsBridgeHandlerImpl(webView);
+    }
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         super.onPageStarted(view, url, favicon);
-        mjsBHandler = new JsBridgeHandlerImpl(view);
-        if (mJsBMsgHandler != null) {
-            mjsBHandler.registeMsgHandler(mJsBMsgHandler);
-            mJsBMsgHandler = null;
-        }
-    }
-
-    @Override
-    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-        Log.e("Test", url);
-        Uri uri = Uri.parse(url);
-        if (uri.getScheme().equals(JsBridgeConstants.SCHEMA)) {
-            if (uri.getHost().equals(JsBridgeConstants.CMD_JS_CALL_NATIVE)) {//js调用native
-                //去掉前面的反斜杠
-                String msg = uri.getPath().substring(1, uri.getPath().length());
-                receiveMessage(msg);
-            }
-        }
-        return super.shouldOverrideUrlLoading(view, url);
     }
 
     @Override
@@ -42,31 +26,38 @@ public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeHand
         super.onPageFinished(view, url);
         String sourceCode = JsBridgeUtil.readFromAssets(view.getContext(), JS_Loaded_FILE);
         view.loadUrl("javascript:" + sourceCode);
+
+        //页面加载结束，清除JsBridgeHandler中没有处理的callback
+        clear();
     }
 
     @Override
-    public void registeMsgHandler(JsBridgeMsgHandler handler) {
-        //JsBridgeHandlerImpl在onPageStarted()方法中实例化的
-        //所以需要判断一下当前的mjsBHandler是否存在，不存在的话现保存一下等到onPageStarted()方法被调用时注册
-        if (mjsBHandler != null) {
-            mjsBHandler.registeMsgHandler(handler);
-        } else {
-            mJsBMsgHandler = handler;
+    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+        Log.e("Test", url);
+        Uri uri = Uri.parse(url);
+        if (uri.getScheme().equals(JsBridgeConstants.SCHEMA)) {
+            if (uri.getHost().equals(JsBridgeConstants.CMD_JS_RESPONSE)) {//js response
+                mjsBHandler.handleJsResponse(JsBridgeUtil.getJsBridgeMsg(uri));
+            } else if (uri.getHost().equals(JsBridgeConstants.CMD_JS_REQUEST)) {//js request
+                mjsBHandler.handleJsRequest(JsBridgeUtil.getJsBridgeMsg(uri));
+            }
         }
+        return super.shouldOverrideUrlLoading(view, url);
     }
 
-    @Override
-    public void sendMessage(String msg) {
-        mjsBHandler.sendMessage(msg);
+    public void registeMsgHandler(JsBridgeCallbackHandler handler) {
+        mjsBHandler.registeMsgHandler(handler);
     }
 
-    @Override
-    public void sendMessage(String msg, JsBridgeCallback callback) {
-        mjsBHandler.sendMessage(msg, callback);
+    public void request(String msg) {
+        mjsBHandler.request(msg);
     }
 
-    @Override
-    public void receiveMessage(String msg) {
-        mjsBHandler.receiveMessage(msg);
+    public void request(String msg, JsBridgeCallback callback) {
+        mjsBHandler.request(msg, callback);
+    }
+
+    public void clear() {
+        mjsBHandler.clear();
     }
 }

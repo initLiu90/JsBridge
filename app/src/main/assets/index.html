@@ -10,7 +10,7 @@
 </body>
 <script type='text/javascript'>
     document.getElementById('method_1').onclick = function () {
-        window.JsBridge.send({ 'tttttt': 'js send msg to native' }, function (msg) {
+        window.JsBridge.request({ 'tttttt': 'js send msg to native' }, function (msg) {
             console.log('js send msg to native callback:' + msg)
         });
     };
@@ -33,9 +33,7 @@
         jsBridge.init(function (msg, callback) {
             console.log('receive native msg:' + msg);
             if (callback) {
-                var data = { 'Javascript Responds': '测试中文!' };
-                console.log('js response with:' + data);
-                callback(data)
+                callback(msg)
             }
         });
     });

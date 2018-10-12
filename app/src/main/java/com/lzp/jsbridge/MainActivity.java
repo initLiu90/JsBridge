@@ -9,10 +9,10 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import com.lzp.jsbridge.library.JsBridgeCallback;
-import com.lzp.jsbridge.library.JsBridgeMsgHandler;
+import com.lzp.jsbridge.library.JsBridgeCallbackHandler;
 import com.lzp.jsbridge.library.JsBridgeWebViewClient;
 
-public class MainActivity extends AppCompatActivity implements JsBridgeMsgHandler{
+public class MainActivity extends AppCompatActivity implements JsBridgeCallbackHandler {
     WebView mWebView;
     JsBridgeWebViewClient mWebViewClient;
 
@@ -26,10 +26,16 @@ public class MainActivity extends AppCompatActivity implements JsBridgeMsgHandle
         findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mWebViewClient.sendMessage("hello", new JsBridgeCallback() {
+                mWebViewClient.request("hello", new JsBridgeCallback() {
                     @Override
                     public void onCallback(String msg) {
-                        Log.e("Test", "call js callback:" + msg);
+                        Log.e("Test", "native:response--->" + msg);
+                    }
+                });
+                mWebViewClient.request("hello222", new JsBridgeCallback() {
+                    @Override
+                    public void onCallback(String msg) {
+                        Log.e("Test", "native:response--->" + msg);
                     }
                 });
             }
@@ -45,15 +51,17 @@ public class MainActivity extends AppCompatActivity implements JsBridgeMsgHandle
                 return super.onConsoleMessage(consoleMessage);
             }
         });
-        mWebViewClient = new JsBridgeWebViewClient();
+        mWebViewClient = new JsBridgeWebViewClient(mWebView);
         mWebViewClient.registeMsgHandler(this);
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.loadUrl("file:///android_asset/index.html");
     }
 
     @Override
-    public void onReceive(String msg, JsBridgeCallback callback) {
-        Log.e("Test","receive js call native msg:"+msg);
-        callback.onCallback("native callback");
+    public void handleCallback(String msg, JsBridgeCallback callback) {
+        Log.e("Test", "receive js call native msg:" + msg);
+        if (callback != null) {
+            callback.onCallback(msg);
+        }
     }
 }
