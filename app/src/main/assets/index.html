@@ -10,7 +10,9 @@
 </body>
 <script type='text/javascript'>
     document.getElementById('method_1').onclick = function () {
-
+        window.JsBridge.send({ 'tttttt': 'js send msg to native' }, function (msg) {
+            console.log('js send msg to native callback:' + msg)
+        });
     };
 
     function connectJsBridge(callback) {

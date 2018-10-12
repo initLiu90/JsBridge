@@ -1,81 +1,106 @@
-(function () {
-    console.log('load');
-    if (window.JsBridge) {
-        console.log('JsBridge already loaded!!!');
-        return;
+(function() {
+  console.log("load");
+  if (window.JsBridge) {
+    console.log("JsBridge already loaded!!!");
+    return;
+  }
+
+  var SCHEMA = "jsbridge";
+  var messageIframe;
+  var callbackQueue = {};
+  var seq = 0;
+
+  function createIframe() {
+    messageIframe = document.createElement("iframe");
+    messageIframe.setAttribute("width", 0);
+    messageIframe.setAttribute("height", 0);
+    messageIframe.setAttribute("style", "display: none;");
+    document.body.appendChild(messageIframe);
+  }
+
+  function init(messageHandler) {
+    console.log("init");
+    if (JsBridge.messageHandler) {
+      throw new Error("WebViewJavascriptBridge.init called twice");
     }
+    JsBridge.messageHandler = messageHandler;
+  }
 
-    var SCHEMA = 'jsbridge';
-    var messageIframe;
+  /**
+   * 分发消息
+   * @param msgJson json字符串
+   */
+  function dispatchMessage(msgJson) {
+    var message = JSON.parse(msgJson);
+    var responseCallback;
+    /* native调用js，native需要callback */
+    if (message.callbackId) {
+      /*获取native传来的callbackid*/
+      var callbackId = message.callbackId;
 
-    function createIframe() {
-        messageIframe = document.createElement("iframe");
-        messageIframe.setAttribute("width", 0);
-        messageIframe.setAttribute("height", 0);
-        messageIframe.setAttribute("style", "display: none;");
-        document.body.appendChild(messageIframe);
+      responseCallback = function(responseData) {
+        console.log("real response:" + responseData);
+        _send({
+          responseId: callbackId,
+          data: responseData
+        });
+      };
+      JsBridge.messageHandler(message.data, responseCallback);
+    } else {
+      /* js调用native后，native的response */
+      if (message.responseId) {
+        callbackQueue[message.responseId](message.data);
+      }
     }
+  }
 
-    function init(messageHandler) {
-        console.log('init');
-        if (JsBridge.messageHandler) {
-            throw new Error('WebViewJavascriptBridge.init called twice');
-        }
-        JsBridge.messageHandler = messageHandler;
+  /**
+   * 真正向native发消息的接口
+   * @param {*} msg object类型{data:xxx,responseId:xxx}
+   * @param {*} callback 回调
+   */
+  function _send(msg, callback) {
+    if (callback) {
+      msg.callbackId = "cb_" + ++seq + "_" + new Date().getTime();
+      /* 加入到callback队列中 */
+      callbackQueue[msg.callbackId] = callback;
     }
+    var msgJson = JSON.stringify(msg);
+    console.log("send msg to native:" + msgJson);
+    messageIframe.src =
+      SCHEMA + "://handleJsCall/" + encodeURIComponent(msgJson);
+  }
 
-    /**
-     * 分发消息
-     * @param msgJson json字符串
-     */
-    function dispatchMessage(msgJson) {
-        var message = JSON.parse(msgJson);
-        if (message.callbackId) {
-            /*获取native传来的callbackid*/
-            var callbackId = message.callbackId;
+  /**
+   * 提供给H5调用的接口，向nativie发送消息
+   * @param msg
+   */
+  function send(msg, callback) {
+    _send({ data: msg }, callback);
+  }
 
-            responseCallback = function (responseData) {
-                console.log('real response:' + responseData);
-                send({
-                    responseId: callbackId,
-                    data: responseData
-                });
-            }
-        }
-        JsBridge.messageHandler(message.data, responseCallback);
+  /**
+   * 由native调用
+   * @param msgJson json字符串
+   */
+  function handleNativeCall(msgJson) {
+    console.log("handleNativeCall:" + msgJson);
+    if (msgJson) {
+      dispatchMessage(msgJson);
     }
+  }
 
-    /**
-     * 向native发送消息
-     * @param msg
-     */
-    function send(msg) {
-        var msgJson = JSON.stringify(msg);
-        console.log('send msg to native:' + msgJson);
-        messageIframe.src = SCHEMA + "://handleJsCall/" + encodeURIComponent(msgJson);
-    }
+  var JsBridge = (window.JsBridge = {
+    init: init,
+    handleNativeCall: handleNativeCall,
+    send: send
+  });
+  createIframe();
 
-    /**
-     * 由native调用
-     * @param msgJson json字符串
-     */
-    function handleNativeCall(msgJson) {
-        console.log("handleNativeCall:" + msgJson);
-        if (msgJson) {
-            dispatchMessage(msgJson);
-        }
-    }
+  var readyEvent = document.createEvent("Events");
+  readyEvent.initEvent("JsBridgeReady");
+  readyEvent.bridge = JsBridge;
+  document.dispatchEvent(readyEvent);
 
-    var JsBridge = window.JsBridge = {
-        init: init,
-        handleNativeCall: handleNativeCall
-    };
-    createIframe();
-
-    var readyEvent = document.createEvent('Events');
-    readyEvent.initEvent('JsBridgeReady');
-    readyEvent.bridge = JsBridge;
-    document.dispatchEvent(readyEvent);
-
-    console.log('load JsBridge success');
+  console.log("load JsBridge success");
 })();

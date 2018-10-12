@@ -9,9 +9,10 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import com.lzp.jsbridge.library.JsBridgeCallback;
+import com.lzp.jsbridge.library.JsBridgeMsgHandler;
 import com.lzp.jsbridge.library.JsBridgeWebViewClient;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements JsBridgeMsgHandler{
     WebView mWebView;
     JsBridgeWebViewClient mWebViewClient;
 
@@ -45,7 +46,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mWebViewClient = new JsBridgeWebViewClient();
+        mWebViewClient.registeMsgHandler(this);
         mWebView.setWebViewClient(mWebViewClient);
         mWebView.loadUrl("file:///android_asset/index.html");
+    }
+
+    @Override
+    public void onReceive(String msg, JsBridgeCallback callback) {
+        Log.e("Test","receive js call native msg:"+msg);
+        callback.onCallback("native callback");
     }
 }

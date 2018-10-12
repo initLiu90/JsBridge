@@ -11,11 +11,16 @@ import com.lzp.jsbridge.library.util.JsBridgeUtil;
 public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeHandler {
     private static final String JS_Loaded_FILE = "JsBridge.js";
     private JsBridgeHandlerImpl mjsBHandler;
+    private JsBridgeMsgHandler mJsBMsgHandler;
 
     @Override
     public void onPageStarted(WebView view, String url, Bitmap favicon) {
         super.onPageStarted(view, url, favicon);
         mjsBHandler = new JsBridgeHandlerImpl(view);
+        if (mJsBMsgHandler != null) {
+            mjsBHandler.registeMsgHandler(mJsBMsgHandler);
+            mJsBMsgHandler = null;
+        }
     }
 
     @Override
@@ -37,6 +42,17 @@ public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeHand
         super.onPageFinished(view, url);
         String sourceCode = JsBridgeUtil.readFromAssets(view.getContext(), JS_Loaded_FILE);
         view.loadUrl("javascript:" + sourceCode);
+    }
+
+    @Override
+    public void registeMsgHandler(JsBridgeMsgHandler handler) {
+        //JsBridgeHandlerImpl在onPageStarted()方法中实例化的
+        //所以需要判断一下当前的mjsBHandler是否存在，不存在的话现保存一下等到onPageStarted()方法被调用时注册
+        if (mjsBHandler != null) {
+            mjsBHandler.registeMsgHandler(handler);
+        } else {
+            mJsBMsgHandler = handler;
+        }
     }
 
     @Override

@@ -1,12 +1,14 @@
 package com.lzp.jsbridge.library;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONObject;
 
 class JsBridgeMsg {
     private String data;
-    private long callbackId;
+    private String callbackId;
+    private String responseId;
 
     public String getData() {
         return data;
@@ -16,12 +18,20 @@ class JsBridgeMsg {
         this.data = data;
     }
 
-    public long getCallbackId() {
+    public String getCallbackId() {
         return callbackId;
     }
 
-    public void setCallbackId(long callbackId) {
+    public void setCallbackId(String callbackId) {
         this.callbackId = callbackId;
+    }
+
+    public String getResponseId() {
+        return responseId;
+    }
+
+    public void setResponseId(String responseId) {
+        this.responseId = responseId;
     }
 
     @Override
@@ -29,7 +39,12 @@ class JsBridgeMsg {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("data", data);
-            jsonObject.put("callbackId", callbackId);
+            if (!TextUtils.isEmpty(callbackId)) {
+                jsonObject.put("callbackId", callbackId);
+            }
+            if (!TextUtils.isEmpty(responseId)) {
+                jsonObject.put("responseId", responseId);
+            }
         } catch (Exception e) {
             Log.e("Test", "convert json string error", e);
         }

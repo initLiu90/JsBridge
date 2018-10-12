@@ -1,6 +1,11 @@
 package com.lzp.jsbridge.library;
 
 public interface JsBridgeHandler {
+    /**
+     * 向JsBridgeHandler注册一个js传给native消息的处理器
+     * @param handler
+     */
+    void registeMsgHandler(JsBridgeMsgHandler handler);
 
     /**
      * 向H5发消息
