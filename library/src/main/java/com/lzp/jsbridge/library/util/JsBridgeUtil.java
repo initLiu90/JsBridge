@@ -11,6 +11,8 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Parameter;
+import java.util.regex.Pattern;
 
 public class JsBridgeUtil {
     private static final String TAG = "JsBridgeUtil";
@@ -69,11 +71,12 @@ public class JsBridgeUtil {
     }
 
     /**
-     *
      * @return
      */
-//    public static String formatJsBridgeMsgJsonStr(String jsonJsbMsg){
-//        //{"data":"{"tttttt":"js send msg to native"}","responseId":"cb_1_1539339480568"}
-//        jsonJsbMsg.replaceAll("\"","{");
-//    }
+    public static String formatJsBridgeMsgJsonStr(String jsonJsbMsg) {
+        //{"data":"{"tttttt":"js send msg to native"}","responseId":"cb_1_1539339480568"}
+        jsonJsbMsg = jsonJsbMsg.replaceAll("\"\\{", "\\{");
+        jsonJsbMsg = jsonJsbMsg.replaceAll("\\}\"", "\\}");
+        return jsonJsbMsg;
+    }
 }

@@ -54,6 +54,7 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
 
     /**
      * real native request js
+     *
      * @param jsbMsg
      * @param callback
      */
@@ -63,12 +64,13 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
             jsbMsg.setCallbackId(id);
             mCallbackMap.put(id, callback);
         }
-        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_REQUEST_JS + "('" + jsbMsg.toString() + "')";
+        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_REQUEST_JS + "('" + JsBridgeUtil.formatJsBridgeMsgJsonStr(jsbMsg.toString()) + "')";
         mWebView.loadUrl(jsCmd);
     }
 
     /**
      * handle js request native
+     *
      * @param msg
      */
     @Override
@@ -96,12 +98,13 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
         rspMsg.setData(responseData);
         rspMsg.setResponseId(reqMsg.getCallbackId());
 
-        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_RESPONSE_JS + "('" + rspMsg.toString() + "')";
+        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_RESPONSE_JS + "('" + JsBridgeUtil.formatJsBridgeMsgJsonStr(rspMsg.toString()) + "')";
         mWebView.loadUrl(jsCmd);
     }
 
     /**
      * handle js response to native
+     *
      * @param msg
      */
     @Override
