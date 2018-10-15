@@ -7,11 +7,14 @@ import android.webkit.WebView;
 
 import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
+import java.lang.reflect.Method;
+
 public class JsBridgeHandlerImpl implements JsBridgeHandler {
     private WebView mWebView;
     private long mSeq = 0;
     private ArrayMap<String, JsBridgeCallback> mCallbackMap = new ArrayMap<>();
     private JsBridgeCallbackHandler mJsbCbHandler;
+    private Object mjsbInterface;
 
     public JsBridgeHandlerImpl(WebView webView) {
         this.mWebView = webView;
@@ -25,6 +28,19 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
     @Override
     public void registeMsgHandler(JsBridgeCallbackHandler handler) {
         mJsbCbHandler = handler;
+    }
+
+    /**
+     * 向js注册提供给js调用的方法
+     *
+     * @param methodNames 方法名
+     */
+    @Override
+    public void registerJsBridgeInterface(Object jsbInterface, String methodNames) {
+        mjsbInterface = jsbInterface;
+        JsBridgeMsg msg = new JsBridgeMsg();
+        msg.setData(methodNames);
+        realRequest(msg, JsBridgeConstants.CMD_NATIVE_REGISTE_REQUEST_JS, null);
     }
 
     /**
@@ -49,7 +65,7 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
         if (!TextUtils.isEmpty(msg)) {
             jsMsg.setData(msg);
         }
-        realRequest(jsMsg, callback);
+        realRequest(jsMsg, JsBridgeConstants.CMD_NATIVE_REQUEST_JS, callback);
     }
 
     /**
@@ -58,13 +74,13 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
      * @param jsbMsg
      * @param callback
      */
-    private void realRequest(JsBridgeMsg jsbMsg, JsBridgeCallback callback) {
+    private void realRequest(JsBridgeMsg jsbMsg, String cmd, JsBridgeCallback callback) {
         if (callback != null) {
             String id = generateCallbackId();
             jsbMsg.setCallbackId(id);
             mCallbackMap.put(id, callback);
         }
-        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + JsBridgeConstants.CMD_NATIVE_REQUEST_JS + "('" + JsBridgeUtil.formatJsBridgeMsgJsonStr(jsbMsg.toString()) + "')";
+        String jsCmd = JsBridgeConstants.PREFIX + ":" + JsBridgeConstants.JSBRIDGE_INSTANCE + "." + cmd + "('" + JsBridgeUtil.formatJsBridgeMsgJsonStr(jsbMsg.toString()) + "')";
         mWebView.loadUrl(jsCmd);
     }
 
@@ -77,14 +93,45 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
     public void handleJsRequest(String msg) {
         Log.e("Test", "native:handleJsRequest--->" + msg);
         final JsBridgeMsg jsbMsg = JsBridgeUtil.decodeJsBridgeMsg(msg);
-        if (mJsbCbHandler != null) {
-            mJsbCbHandler.handleCallback(jsbMsg.getData(), TextUtils.isEmpty(jsbMsg.getCallbackId()) ? null : new JsBridgeCallback() {
-                @Override
-                public void onCallback(String responseData) {
-                    response(jsbMsg, responseData);
-                }
-            });
+        if (!callJsBridgeInterfaceMethod(jsbMsg)) {
+            if (mJsbCbHandler != null) {
+                mJsbCbHandler.handleCallback(jsbMsg.getData(), TextUtils.isEmpty(jsbMsg.getCallbackId()) ? null : new JsBridgeCallback() {
+                    @Override
+                    public void onCallback(String responseData) {
+                        response(jsbMsg, responseData);
+                    }
+                });
+            }
         }
+    }
+
+    private boolean callJsBridgeInterfaceMethod(final JsBridgeMsg jsbMsg) {
+        if (jsbMsg.getMethodName() != null && !jsbMsg.getMethodName().equals("")) {
+            Class<?>[] params;
+            if (!TextUtils.isEmpty(jsbMsg.getCallbackId())) {
+                params = new Class<?>[]{String.class, JsBridgeCallback.class};
+            } else {
+                params = new Class<?>[]{String.class};
+            }
+            try {
+                Method method = mjsbInterface.getClass().getDeclaredMethod(jsbMsg.getMethodName(), params);
+                method.setAccessible(true);
+                if (!TextUtils.isEmpty(jsbMsg.getCallbackId())) {
+                    method.invoke(mjsbInterface, jsbMsg.getData(), new JsBridgeCallback() {
+                        @Override
+                        public void onCallback(String responseData) {
+                            response(jsbMsg, responseData);
+                        }
+                    });
+                } else {
+                    method.invoke(mjsbInterface, jsbMsg.getData());
+                }
+                return true;
+            } catch (Exception e) {
+                Log.e("Test", "call method:" + jsbMsg.getMethodName() + " error:", e);
+            }
+        }
+        return false;
     }
 
     /**

@@ -2,8 +2,11 @@ package com.lzp.jsbridge.library.util;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.ArraySet;
 import android.util.Log;
+import android.util.SparseArray;
 
+import com.lzp.jsbridge.library.JsBridgeInterface;
 import com.lzp.jsbridge.library.JsBridgeMsg;
 
 import org.json.JSONObject;
@@ -11,7 +14,13 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class JsBridgeUtil {
@@ -57,6 +66,9 @@ public class JsBridgeUtil {
             if (jsonObject.has("callbackId")) {
                 msg.setCallbackId(jsonObject.getString("callbackId"));
             }
+            if (jsonObject.has("methodName")) {
+                msg.setMethodName(jsonObject.getString("methodName"));
+            }
             msg.setData(jsonObject.getString("data"));
         } catch (Exception e) {
             Log.e("Test", "decode receivemsg error", e);
@@ -78,5 +90,32 @@ public class JsBridgeUtil {
         jsonJsbMsg = jsonJsbMsg.replaceAll("\"\\{", "\\{");
         jsonJsbMsg = jsonJsbMsg.replaceAll("\\}\"", "\\}");
         return jsonJsbMsg;
+    }
+
+    public static String scanJsbridgeInterceMethod(Object jsBridgeInterce) {
+        Set<String> tmp = new HashSet<>();
+        Method[] methods = jsBridgeInterce.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            Annotation jsbAnt = method.getAnnotation(JsBridgeInterface.class);
+            if (jsbAnt != null) {
+                tmp.add(method.getName());
+            }
+        }
+
+
+        Iterator<String> it = tmp.iterator();
+        if (!it.hasNext())
+            return "";
+
+        StringBuilder sb = new StringBuilder();
+        for (; ; ) {
+            String e = it.next();
+            sb.append(e);
+            if (!it.hasNext()) {
+                break;
+            }
+            sb.append(',');
+        }
+        return sb.toString();
     }
 }

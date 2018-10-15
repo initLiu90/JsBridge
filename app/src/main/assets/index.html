@@ -6,12 +6,24 @@
 
 <body>
     <button id="method_1">jsBridge</button>
+    <button id="method_2">hello</button>
+    <button id="method_3">hello with callback</button>
 
 </body>
 <script type='text/javascript'>
     document.getElementById('method_1').onclick = function () {
         window.JsBridge.request({ 'tttttt': 'js send msg to native' }, function (msg) {
             console.log('js send msg to native callback:' + msg)
+        });
+    };
+
+    document.getElementById('method_2').onclick = function () {
+        window.JsBridge.sayHello({ 'data': 'hello' });
+    };
+
+    document.getElementById('method_3').onclick = function () {
+        window.JsBridge.sayHelloCallback({ 'data': 'hello with callback' }, function (msg) {
+            console.log('receive native callback:' + msg)
         });
     };
 

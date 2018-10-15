@@ -11,6 +11,7 @@ import com.lzp.jsbridge.library.util.JsBridgeUtil;
 public class JsBridgeWebViewClient extends WebViewClient {
     private static final String JS_Loaded_FILE = "JsBridge.js";
     private JsBridgeHandler mjsBHandler;
+    private Object mjsbInterface;
 
     public JsBridgeWebViewClient(WebView webView) {
         mjsBHandler = new JsBridgeHandlerImpl(webView);
@@ -26,6 +27,9 @@ public class JsBridgeWebViewClient extends WebViewClient {
         super.onPageFinished(view, url);
         String sourceCode = JsBridgeUtil.readFromAssets(view.getContext(), JS_Loaded_FILE);
         view.loadUrl("javascript:" + sourceCode);
+        if (mjsbInterface != null) {
+            mjsBHandler.registerJsBridgeInterface(mjsbInterface, JsBridgeUtil.scanJsbridgeInterceMethod(mjsbInterface));
+        }
 
         //页面加载结束，清除JsBridgeHandler中没有处理的callback
         clear();
@@ -43,6 +47,10 @@ public class JsBridgeWebViewClient extends WebViewClient {
             }
         }
         return super.shouldOverrideUrlLoading(view, url);
+    }
+
+    public void setJsBridgeInterce(Object jsBridgeInterce) {
+        mjsbInterface = jsBridgeInterce;
     }
 
     public void registeMsgHandler(JsBridgeCallbackHandler handler) {

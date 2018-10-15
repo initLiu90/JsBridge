@@ -9,6 +9,7 @@ public class JsBridgeMsg {
     private String data;
     private String callbackId;
     private String responseId;
+    private String methodName;
 
     public String getData() {
         return data;
@@ -34,6 +35,14 @@ public class JsBridgeMsg {
         this.responseId = responseId;
     }
 
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
+    }
+
     @Override
     public String toString() {
         JSONObject jsonObject = new JSONObject();
@@ -45,6 +54,9 @@ public class JsBridgeMsg {
             if (!TextUtils.isEmpty(responseId)) {
                 jsonObject.put("responseId", responseId);
             }
+//            if (!TextUtils.isEmpty(methodName)) {
+//                jsonObject.put("methodName", methodName);
+//            }
         } catch (Exception e) {
             Log.e("Test", "convert json string error", e);
         }

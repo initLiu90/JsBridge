@@ -6,6 +6,7 @@ public class JsBridgeConstants {
     public static final String JSBRIDGE_INSTANCE="JsBridge";
     public static final String CMD_NATIVE_REQUEST_JS="handleNativeRequest";
     public static final String CMD_NATIVE_RESPONSE_JS="handleNativeResponse";
+    public static final String CMD_NATIVE_REGISTE_REQUEST_JS="handleNativeRegisteRequest";
     public static final String CMD_JS_RESPONSE="JsResponse";
     public static final String CMD_JS_REQUEST="JsRequest";
 }
