@@ -6,7 +6,7 @@ public interface JsBridgeHandler {
      *
      * @param handler
      */
-    void registeMsgHandler(JsBridgeCallbackHandler handler);
+    void registeMsgHandler(JsBridgeMsgHandler handler);
 
     /**
      * 向js注册提供给js调用的方法

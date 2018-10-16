@@ -13,7 +13,7 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
     private WebView mWebView;
     private long mSeq = 0;
     private ArrayMap<String, JsBridgeCallback> mCallbackMap = new ArrayMap<>();
-    private JsBridgeCallbackHandler mJsbCbHandler;
+    private JsBridgeMsgHandler mJsbMsgHandler;
     private Object mjsbInterface;
 
     public JsBridgeHandlerImpl(WebView webView) {
@@ -26,8 +26,8 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
      * @param handler
      */
     @Override
-    public void registeMsgHandler(JsBridgeCallbackHandler handler) {
-        mJsbCbHandler = handler;
+    public void registeMsgHandler(JsBridgeMsgHandler handler) {
+        mJsbMsgHandler = handler;
     }
 
     /**
@@ -90,12 +90,12 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
      * @param msg
      */
     @Override
-    public void handleJsRequest(String msg) {
+    public void handleJsRequest(final String msg) {
         Log.e("Test", "native:handleJsRequest--->" + msg);
         final JsBridgeMsg jsbMsg = JsBridgeUtil.decodeJsBridgeMsg(msg);
         if (!callJsBridgeInterfaceMethod(jsbMsg)) {
-            if (mJsbCbHandler != null) {
-                mJsbCbHandler.handleCallback(jsbMsg.getData(), TextUtils.isEmpty(jsbMsg.getCallbackId()) ? null : new JsBridgeCallback() {
+            if (mJsbMsgHandler != null) {
+                mJsbMsgHandler.handleMessage(jsbMsg.getData(), TextUtils.isEmpty(jsbMsg.getCallbackId()) ? null : new JsBridgeCallback() {
                     @Override
                     public void onCallback(String responseData) {
                         response(jsbMsg, responseData);
@@ -105,6 +105,11 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
         }
     }
 
+    /**
+     * 根据js调用的native端的方法名，调用native端对应的方法
+     * @param jsbMsg
+     * @return true 找到了native端对应的方法并调用成功，false 没有找到native端方法或调用失败
+     */
     private boolean callJsBridgeInterfaceMethod(final JsBridgeMsg jsbMsg) {
         if (jsbMsg.getMethodName() != null && !jsbMsg.getMethodName().equals("")) {
             Class<?>[] params;

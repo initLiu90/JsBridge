@@ -8,7 +8,7 @@ import android.webkit.WebViewClient;
 
 import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
-public class JsBridgeWebViewClient extends WebViewClient {
+public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeNativeInterface{
     private static final String JS_Loaded_FILE = "JsBridge.js";
     private JsBridgeHandler mjsBHandler;
     private Object mjsbInterface;
@@ -39,32 +39,38 @@ public class JsBridgeWebViewClient extends WebViewClient {
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         Log.e("Test", url);
         Uri uri = Uri.parse(url);
+        //dispatch msg
         if (uri.getScheme().equals(JsBridgeConstants.SCHEMA)) {
-            if (uri.getHost().equals(JsBridgeConstants.CMD_JS_RESPONSE)) {//js response
+            if (uri.getHost().equals(JsBridgeConstants.CMD_JS_RESPONSE)) {//handle js response
                 mjsBHandler.handleJsResponse(JsBridgeUtil.getJsBridgeMsg(uri));
-            } else if (uri.getHost().equals(JsBridgeConstants.CMD_JS_REQUEST)) {//js request
+            } else if (uri.getHost().equals(JsBridgeConstants.CMD_JS_REQUEST)) {//handle js request
                 mjsBHandler.handleJsRequest(JsBridgeUtil.getJsBridgeMsg(uri));
             }
         }
         return super.shouldOverrideUrlLoading(view, url);
     }
 
+    @Override
     public void setJsBridgeInterce(Object jsBridgeInterce) {
         mjsbInterface = jsBridgeInterce;
     }
 
-    public void registeMsgHandler(JsBridgeCallbackHandler handler) {
+    @Override
+    public void registeMsgHandler(JsBridgeMsgHandler handler) {
         mjsBHandler.registeMsgHandler(handler);
     }
 
+    @Override
     public void request(String msg) {
         mjsBHandler.request(msg);
     }
 
+    @Override
     public void request(String msg, JsBridgeCallback callback) {
         mjsBHandler.request(msg, callback);
     }
 
+    @Override
     public void clear() {
         mjsBHandler.clear();
     }

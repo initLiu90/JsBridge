@@ -9,11 +9,11 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
 import com.lzp.jsbridge.library.JsBridgeCallback;
-import com.lzp.jsbridge.library.JsBridgeCallbackHandler;
+import com.lzp.jsbridge.library.JsBridgeMsgHandler;
 import com.lzp.jsbridge.library.JsBridgeInterface;
 import com.lzp.jsbridge.library.JsBridgeWebViewClient;
 
-public class MainActivity extends AppCompatActivity implements JsBridgeCallbackHandler {
+public class MainActivity extends AppCompatActivity implements JsBridgeMsgHandler {
     WebView mWebView;
     JsBridgeWebViewClient mWebViewClient;
 
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements JsBridgeCallbackH
     }
 
     @Override
-    public void handleCallback(String msg, JsBridgeCallback callback) {
+    public void handleMessage(String msg, JsBridgeCallback callback) {
         Log.e("Test", "receive js call native msg:" + msg);
         if (callback != null) {
             callback.onCallback(msg);
