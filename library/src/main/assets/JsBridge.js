@@ -28,7 +28,7 @@
 
   /**
    * js response to native
-   * @param {*} rspMsg 
+   * @param {*} rspMsg
    */
   function response(rspMsg) {
     var rspMsgJson = JSON.stringify(rspMsg);
@@ -93,7 +93,7 @@
       var reqMsg = JSON.parse(msgJson);
       var methodNameArray = reqMsg.data.split(',');
       for (var item in methodNameArray) {
-        createRequestMethod(methodNameArray[item])
+        createRequestMethod(methodNameArray[item]);
       }
     }
   }
@@ -106,19 +106,23 @@
     }
   }
 
-    /**
-     * handle native response to js
-     * @param msgJson json字符串
-     */
-    function handleNativeResponse(msgJson) {
-      console.log("handleNativeResponse:" + msgJson);
-      if (msgJson) {
-        var rspMsg = JSON.parse(msgJson);
-        if (rspMsg.responseId) {
+  /**
+   * handle native response to js
+   * @param msgJson json字符串
+   */
+  function handleNativeResponse(msgJson) {
+    console.log("handleNativeResponse:" + msgJson);
+    if (msgJson) {
+      var rspMsg = JSON.parse(msgJson);
+      if (rspMsg.responseId) {
+        if (rspMsg.data instanceof Object) {
+          callbackQueue[rspMsg.responseId](JSON.stringify(rspMsg.data));
+        } else {
           callbackQueue[rspMsg.responseId](rspMsg.data);
         }
       }
     }
+  }
 
     var JsBridge = (window.JsBridge = {
       init: init,
