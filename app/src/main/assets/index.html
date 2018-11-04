@@ -12,28 +12,28 @@
 </body>
 <script type='text/javascript'>
     document.getElementById('method_1').onclick = function () {
-        window.JsBridge.request({ 'tttttt': 'js send msg to native' }, function (msg) {
+        window.JsClient.request({ 'tttttt': 'js send msg to native' }, function (msg) {
             console.log('js send msg to native callback:' + msg)
         });
     };
 
     document.getElementById('method_2').onclick = function () {
-        window.JsBridge.sayHello({ 'data': 'hello' });
+        window.JsClient.sayHello({ 'data': 'hello' });
     };
 
     document.getElementById('method_3').onclick = function () {
-        window.JsBridge.sayHelloCallback({ 'data': 'hello with callback' }, function (msg) {
+        window.JsClient.sayHelloCallback({ 'data': 'hello with callback' }, function (msg) {
             console.log('receive native callback:' + msg)
         });
     };
 
     function connectJsBridge(callback) {
-        if (window.JsBridge) {
-            callback(JsBridge);
+        if (window.JsClient) {
+            callback(JsClient);
         } else {
             document.addEventListener('JsBridgeReady',
-                function () {
-                    callback(JsBridge)
+                function (event) {
+                    callback(event.bridge)
                 },
                 false
             );
@@ -41,8 +41,8 @@
     }
 
     //向jsbridge注册一个消息处理hanlder，用来native发来的消息
-    connectJsBridge(function (jsBridge) {
-        jsBridge.init(function (msg, callback) {
+    connectJsBridge(function (jsClient) {
+        jsClient.init(function (msg, callback) {
             console.log('receive native msg:' + msg);
             if (callback) {
                 callback(msg)
