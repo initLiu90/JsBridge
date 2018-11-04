@@ -10,10 +10,8 @@ public interface JsBridgeHandler {
 
     /**
      * 向js注册提供给js调用的方法
-     *
-     * @param methodNames 方法名
      */
-    void registerJsBridgeInterface(Object jsbInterface, String methodNames);
+    void registerJsBridgeInterface(Object jsbInterface);
 
     /**
      * native request js

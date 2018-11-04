@@ -8,7 +8,7 @@ import android.webkit.WebViewClient;
 
 import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
-public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeNativeInterface{
+public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeNativeInterface {
     private static final String JS_Loaded_FILE = "JsBridge.js";
     private JsBridgeHandler mjsBHandler;
     private Object mjsbInterface;
@@ -28,7 +28,7 @@ public class JsBridgeWebViewClient extends WebViewClient implements JsBridgeNati
         String sourceCode = JsBridgeUtil.readFromAssets(view.getContext(), JS_Loaded_FILE);
         view.loadUrl("javascript:" + sourceCode);
         if (mjsbInterface != null) {
-            mjsBHandler.registerJsBridgeInterface(mjsbInterface, JsBridgeUtil.scanJsbridgeInterceMethod(mjsbInterface));
+            mjsBHandler.registerJsBridgeInterface(mjsbInterface);
         }
 
         //页面加载结束，清除JsBridgeHandler中没有处理的callback

@@ -8,6 +8,8 @@ import android.webkit.WebView;
 import com.lzp.jsbridge.library.util.JsBridgeUtil;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsBridgeHandlerImpl implements JsBridgeHandler {
     private WebView mWebView;
@@ -32,14 +34,19 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
 
     /**
      * 向js注册提供给js调用的方法
-     *
-     * @param methodNames 方法名
      */
     @Override
-    public void registerJsBridgeInterface(Object jsbInterface, String methodNames) {
+    public void registerJsBridgeInterface(Object jsbInterface) {
         mjsbInterface = jsbInterface;
+        String methodNames = JsBridgeUtil.scanJsbridgeInterceMethod(jsbInterface);
+        String instanceName = JsBridgeUtil.getJsbridgeInstanceName(jsbInterface);
+        Map<String, String> data = new HashMap<>();
+        data.put("instanceName", instanceName);
+        data.put("methodNames", methodNames);
+        String dataStr = JsBridgeUtil.ecodeString2Json(data);
+
         JsBridgeMsg msg = new JsBridgeMsg();
-        msg.setData(methodNames);
+        msg.setData(dataStr);
         realRequest(msg, JsBridgeConstants.CMD_NATIVE_REGISTE_REQUEST_JS, null);
     }
 
@@ -107,6 +114,7 @@ public class JsBridgeHandlerImpl implements JsBridgeHandler {
 
     /**
      * 根据js调用的native端的方法名，调用native端对应的方法
+     *
      * @param jsbMsg
      * @return true 找到了native端对应的方法并调用成功，false 没有找到native端方法或调用失败
      */

@@ -2,9 +2,7 @@ package com.lzp.jsbridge.library.util;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.ArraySet;
 import android.util.Log;
-import android.util.SparseArray;
 
 import com.lzp.jsbridge.library.JsBridgeInterface;
 import com.lzp.jsbridge.library.JsBridgeMsg;
@@ -16,12 +14,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class JsBridgeUtil {
     private static final String TAG = "JsBridgeUtil";
@@ -82,6 +78,18 @@ public class JsBridgeUtil {
         return msg;
     }
 
+    public static String ecodeString2Json(Map<String, String> data) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            for (Map.Entry<String, String> entry : data.entrySet()) {
+                jsonObject.put(entry.getKey(), entry.getValue());
+            }
+        } catch (Exception e) {
+            Log.e("Test", "ecodeString2Json error:", e);
+        }
+        return jsonObject.toString();
+    }
+
     /**
      * @return
      */
@@ -90,6 +98,13 @@ public class JsBridgeUtil {
         jsonJsbMsg = jsonJsbMsg.replaceAll("\"\\{", "\\{");
         jsonJsbMsg = jsonJsbMsg.replaceAll("\\}\"", "\\}");
         return jsonJsbMsg;
+    }
+
+    public static String getJsbridgeInstanceName(Object jsBridgeInterce) {
+        if (jsBridgeInterce == null) {
+            throw new IllegalArgumentException("jsBridgeInterce is null");
+        }
+        return jsBridgeInterce.getClass().getSimpleName();
     }
 
     public static String scanJsbridgeInterceMethod(Object jsBridgeInterce) {

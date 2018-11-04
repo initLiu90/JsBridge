@@ -1,4 +1,4 @@
-(function () {
+(function() {
   console.log("load");
   if (window.JsBridge) {
     console.log("JsBridge already loaded!!!");
@@ -60,6 +60,7 @@
   }
 
   /**
+   * native call this method
    * handle native request js
    * @param msgJson json字符串
    */
@@ -73,7 +74,7 @@
       if (reqMsg.callbackId) {
         /*获取native传来的callbackid*/
         var callbackId = reqMsg.callbackId;
-        responseCallback = function (responseData) {
+        responseCallback = function(responseData) {
           response({
             responseId: callbackId,
             data: responseData
@@ -85,28 +86,36 @@
   }
 
   /**
+   * native call this method
    * native registe jsbridge interface
    */
   function handleNativeRegisteRequest(msgJson) {
     console.log("js:handleNativeRegisteRequest-->" + msgJson);
     if (msgJson) {
       var reqMsg = JSON.parse(msgJson);
-      var methodNameArray = reqMsg.data.split(',');
+      var methodNameArray = reqMsg.data.methodNames.split(",");
+      var instanceName = reqMsg.data.instanceName;
       for (var item in methodNameArray) {
         createRequestMethod(methodNameArray[item]);
       }
-    }
-  }
-
-  function createRequestMethod(methodName) {
-    console.log('methoName=' + methodName);
-    JsBridge[methodName] = function (msg, callback) {
-      console.log('call ' + methodName);
-      this.request(msg, callback, methodName);
+      window[instanceName] = window.JsBridge;
     }
   }
 
   /**
+   * 根据native传来的方法名，在window.JsBridge创建对应的方法
+   * @param {*} methodName
+   */
+  function createRequestMethod(methodName) {
+    console.log("methoName=" + methodName);
+    JsBridge[methodName] = function(msg, callback) {
+      console.log("call " + methodName);
+      this.request(msg, callback, methodName);
+    };
+  }
+
+  /**
+   * native call this method
    * handle native response to js
    * @param msgJson json字符串
    */
@@ -124,19 +133,19 @@
     }
   }
 
-    var JsBridge = (window.JsBridge = {
-      init: init,
-      handleNativeRequest: handleNativeRequest,
-      handleNativeResponse: handleNativeResponse,
-      handleNativeRegisteRequest: handleNativeRegisteRequest,
-      request: request
-    });
-    createIframe();
+  var JsBridge = (window.JsBridge = {
+    init: init,
+    handleNativeRequest: handleNativeRequest,
+    handleNativeResponse: handleNativeResponse,
+    handleNativeRegisteRequest: handleNativeRegisteRequest,
+    request: request
+  });
+  createIframe();
 
-    var readyEvent = document.createEvent("Events");
-    readyEvent.initEvent("JsBridgeReady");
-    readyEvent.bridge = JsBridge;
-    document.dispatchEvent(readyEvent);
+  var readyEvent = document.createEvent("Events");
+  readyEvent.initEvent("JsBridgeReady");
+  readyEvent.bridge = JsBridge;
+  document.dispatchEvent(readyEvent);
 
-    console.log("load JsBridge success");
-  }) ();
+  console.log("load JsBridge success");
+})();
